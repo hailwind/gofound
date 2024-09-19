@@ -33,6 +33,10 @@
             <template v-if="db">
               <div><span>存储路径：</span>
                 <el-tag v-text="db.IndexPath"></el-tag>
+                <span> 文档数：</span>
+                <el-tag v-text="db.DocsCount"></el-tag>
+                <span> 分片数：</span>
+                <el-tag v-text="db.Shard"></el-tag>
               </div>
             </template>
 

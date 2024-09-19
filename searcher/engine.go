@@ -2,6 +2,16 @@ package searcher
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"regexp"
+	"runtime"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/sea-team/gofound/searcher/arrays"
 	"github.com/sea-team/gofound/searcher/model"
 	"github.com/sea-team/gofound/searcher/pagination"
@@ -9,13 +19,6 @@ import (
 	"github.com/sea-team/gofound/searcher/storage"
 	"github.com/sea-team/gofound/searcher/utils"
 	"github.com/sea-team/gofound/searcher/words"
-	"log"
-	"os"
-	"runtime"
-	"sort"
-	"strings"
-	"sync"
-	"time"
 
 	"github.com/Knetic/govaluate"
 	"github.com/syndtr/goleveldb/leveldb/errors"
@@ -40,6 +43,7 @@ type Engine struct {
 	Timeout   int64 //超时时间,单位秒
 	BufferNum int   //分片缓冲数
 
+	DocsCount     int64
 	documentCount int64 //文档总数量
 }
 
@@ -194,6 +198,10 @@ func (e *Engine) AddDocument(index *model.IndexDoc) {
 	text := index.Text
 
 	splitWords := e.Tokenizer.Cut(text)
+	if v, ok := index.Document["title"]; ok {
+		title := v.(string)
+		splitWords = append(splitWords, e.Tokenizer.Cut(title)...)
+	}
 
 	id := index.Id
 	// 检查是否需要更新倒排索引 words变更/id不存在
@@ -353,8 +361,36 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) (*model.SearchResult,
 	//等待搜索初始化完成
 	e.Wait()
 
+	if strings.Contains(request.Query, "id=") {
+		idRegx, _ := regexp.Compile(`id=(.*)`)
+		submatchs := idRegx.FindStringSubmatch(request.Query)
+		index, err := strconv.Atoi(submatchs[1])
+		log.Printf("query id %d", index)
+		if err == nil {
+			var result = &model.SearchResult{
+				Total: 1,
+				Page:  request.Page,
+				Limit: request.Limit,
+				Words: []string{},
+			}
+			item := model.SliceItem{
+				Id: uint32(index),
+			}
+			result.Documents = make([]model.ResponseDoc, 1)
+			wordMap := make(map[string]bool)
+			wg := new(sync.WaitGroup)
+			wg.Add(1)
+			go e.getDocument(item, &result.Documents[0], request, &wordMap, wg)
+			wg.Wait()
+			return result, nil
+		}
+	}
+
 	//分词搜索
 	words := e.Tokenizer.Cut(request.Query)
+	if e.IsDebug {
+		log.Printf("关键词分词结果: %s", words)
+	}
 
 	fastSort := &sorts.FastSort{
 		IsDebug: e.IsDebug,
@@ -386,6 +422,9 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) (*model.SearchResult,
 		wordMap[word] = true
 	}
 
+	if e.IsDebug {
+		log.Printf("Found 文档数: %d", fastSort.Count())
+	}
 	//读取文档
 	var result = &model.SearchResult{
 		Total: fastSort.Count(),

@@ -3,9 +3,10 @@ package core
 import (
 	"flag"
 	"fmt"
-	"github.com/sea-team/gofound/global"
 	"os"
 	"runtime"
+
+	"github.com/sea-team/gofound/global"
 
 	"gopkg.in/yaml.v2"
 )
@@ -19,7 +20,7 @@ func Parser() *global.Config {
 
 	var dataDir = flag.String("data", dir, "设置数据存储目录")
 
-	var debug = flag.Bool("debug", true, "设置是否开启调试模式")
+	var debug = flag.Bool("debug", false, "设置是否开启调试模式")
 
 	var dictionaryPath = flag.String("dictionary", "./data/dictionary.txt", "设置词典路径")
 

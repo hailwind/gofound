@@ -1,10 +1,11 @@
 package sorts
 
 import (
-	"github.com/sea-team/gofound/searcher/model"
 	"sort"
 	"strings"
 	"sync"
+
+	"github.com/sea-team/gofound/searcher/model"
 )
 
 const (
@@ -46,8 +47,7 @@ type FastSort struct {
 	sync.Mutex
 
 	IsDebug bool
-
-	data []model.SliceItem
+	data    []model.SliceItem
 
 	temps []uint32
 
@@ -57,8 +57,8 @@ type FastSort struct {
 }
 
 func (f *FastSort) Add(ids *[]uint32) {
-	//f.Lock()
-	//defer f.Unlock()
+	f.Lock()
+	defer f.Unlock()
 
 	//for _, id := range *ids {
 	//
@@ -79,7 +79,7 @@ func (f *FastSort) Add(ids *[]uint32) {
 }
 
 // 二分法查找
-func (f *FastSort) find(target *uint32) (bool, int) {
+func (f *FastSort) findasc(target *uint32) (bool, int) {
 
 	low := 0
 	high := f.count - 1
@@ -94,12 +94,32 @@ func (f *FastSort) find(target *uint32) (bool, int) {
 		}
 	}
 	return false, -1
-	//for index, item := range f.data {
-	//	if item.Id == *target {
-	//		return true, index
-	//	}
-	//}
-	//return false, -1
+}
+
+// 二分法查找
+func (f *FastSort) finddesc(target *uint32) (bool, int) {
+
+	low := 0
+	high := f.count - 1
+	for low <= high {
+		mid := (low + high) / 2
+		if f.data[mid].Id == *target {
+			return true, mid
+		} else if f.data[mid].Id < *target {
+			high = mid - 1
+		} else {
+			low = mid + 1
+		}
+	}
+	return false, -1
+}
+
+func (f *FastSort) find(target *uint32) (bool, int) {
+	if strings.ToLower(f.Order) == DESC {
+		return f.finddesc(target)
+	} else {
+		return f.findasc(target)
+	}
 }
 
 // Count 获取数量
@@ -116,9 +136,8 @@ func (f *FastSort) Sort() {
 	}
 }
 
-// Process 处理数据
+// Process 处理数据，按重复加权重
 func (f *FastSort) Process() {
-	//计算重复
 	f.Sort()
 
 	for _, temp := range f.temps {
@@ -135,6 +154,7 @@ func (f *FastSort) Process() {
 	//对分数进行排序
 	sort.Sort(sort.Reverse(ScoreSlice(f.data)))
 }
+
 func (f *FastSort) GetAll(result *[]model.SliceItem, start int, end int) {
 
 	*result = f.data[start:end]

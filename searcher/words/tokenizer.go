@@ -2,8 +2,9 @@ package words
 
 import (
 	"embed"
-	"github.com/sea-team/gofound/searcher/utils"
 	"strings"
+
+	"github.com/sea-team/gofound/searcher/utils"
 
 	"github.com/wangbin/jiebago"
 )
@@ -50,6 +51,9 @@ func (t *Tokenizer) Cut(text string) []string {
 		w, ok := <-resultChan
 		if !ok {
 			break
+		}
+		if w == " " {
+			continue
 		}
 		_, found := wordMap[w]
 		if !found {

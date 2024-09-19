@@ -3,11 +3,11 @@ package searcher
 import (
 	"errors"
 	"fmt"
-	"github.com/sea-team/gofound/searcher/words"
 	"log"
 	"os"
 	"runtime"
-	"unsafe"
+
+	"github.com/sea-team/gofound/searcher/words"
 )
 
 type Container struct {
@@ -79,6 +79,7 @@ func (c *Container) GetDataBase(name string) *Engine {
 	if !ok {
 		//创建引擎
 		engine = c.NewEngine(name)
+		engine.DocsCount = engine.GetDocumentCount()
 		c.engines[name] = engine
 		//释放引擎
 	}
@@ -88,10 +89,10 @@ func (c *Container) GetDataBase(name string) *Engine {
 
 // GetDataBases 获取数据库列表
 func (c *Container) GetDataBases() map[string]*Engine {
-	for _, engine := range c.engines {
-		size := unsafe.Sizeof(&engine)
-		fmt.Printf("%s:%d\n", engine.DatabaseName, size)
-	}
+	// for _, engine := range c.engines {
+	// 	size := unsafe.Sizeof(&engine)
+	// 	fmt.Printf("%s:%d\n", engine.DatabaseName, size)
+	// }
 	return c.engines
 }
 

@@ -225,13 +225,13 @@ func DirSizeB(path string) int64 {
 // RemovePunctuation 移除所有的标点符号
 func RemovePunctuation(str string) string {
 	reg := regexp.MustCompile(`\p{P}+`)
-	return reg.ReplaceAllString(str, "")
+	return reg.ReplaceAllString(str, " ")
 }
 
 // RemoveSpace 移除所有的空格
 func RemoveSpace(str string) string {
 	reg := regexp.MustCompile(`\s+`)
-	return reg.ReplaceAllString(str, "")
+	return reg.ReplaceAllString(str, " ")
 }
 
 // init 注册数据类型
